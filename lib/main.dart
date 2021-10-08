@@ -1,37 +1,54 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_app/authentication_service.dart';
+import 'package:flutter_app/home_page.dart';
+import 'package:flutter_app/sign_in_page.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-void main() => runApp(const MaterialApp(
-  home: Home()
-));
 
-class Home extends StatelessWidget {
-  const Home({Key? key}) : super(key: key);
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Demo App'),
-        centerTitle: true,
-        backgroundColor: Colors.red[400],
-      ),
-      body: const Center(
-        child: Text(
-          "Flutter App",
-          style: TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2.0,
-              color: Colors.grey,
-              fontFamily: 'IndieFlowerFamily'
-          ),
+    return MultiProvider(
+      providers: [
+        Provider<AuthenticationService>(
+          create: (_) => AuthenticationService(FirebaseAuth.instance),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {  },
-        child: const Text('click'),
-        backgroundColor: Colors.red[400],
+        StreamProvider(
+          create: (context) => context.read<AuthenticationService>().authStateChange, initialData: null,
+        )
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const AuthenticationWrapper(),
       ),
     );
+  }
+}
+
+class AuthenticationWrapper extends StatelessWidget {
+  const AuthenticationWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final firebaseUser = context.watch<User?>();
+
+    if (firebaseUser != null) {
+      return const HomePage();
+    }
+    return SignInPage();
   }
 }
